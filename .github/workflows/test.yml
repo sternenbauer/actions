@@ -1,0 +1,24 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    timeout-minutes: 30
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Stack
+        uses: ./setup-stack
+        with:
+          directory: "example"
+          ghp-token: "foo"
