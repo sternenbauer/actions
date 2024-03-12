@@ -47,6 +47,7 @@ runs:
     - name: Yarn Install
       shell: bash
       run: "yarn install --network-timeout 300000"
+      working-directory: "${{ inputs.directory }}"
 
     - name: Setup Go
       uses: actions/setup-go@v4
