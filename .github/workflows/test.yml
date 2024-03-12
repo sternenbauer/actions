@@ -22,3 +22,11 @@ jobs:
         with:
           directory: "example"
           ghp-token: "foo"
+
+      - name: Run Node
+        run: node main.js
+        working-directory: example
+
+      - name: Run Go
+        run: go run main.go
+        working-directory: example
