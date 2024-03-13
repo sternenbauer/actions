@@ -1,0 +1,49 @@
+name: Update Deployment
+description: "Updates a Kubernetes Deployment with a new Image tag."
+inputs:
+  k8s-config:
+    description: "Kubernetes Configuration"
+    required: true
+  deployment:
+    description: "Deployment Name"
+    required: true
+  container:
+    description: "Container Name"
+    required: true
+  registry:
+    description: "Container Registry"
+    required: true
+    default: europe-west1-docker.pkg.dev
+  image:
+    description: "Image Name"
+    required: true
+  tag:
+    description: "Image Tag"
+    required: true
+    default: "${GITHUB_SHA::7}"
+  skipSetup:
+    description: "Skip Setup, if provided"
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      if: "${{ !inputs.skipSetup }}"
+
+    - name: Prepare Context
+      uses: azure/k8s-set-context@v1
+      with:
+        kubeconfig: ${{ inputs.k8s-config }}
+      if: "${{ !inputs.skipSetup }}"
+
+    # TODO: Make tag configurable.
+    # TODO: Make namespace configurable.
+
+    - name: Update Image
+      shell: bash
+      run: "kubectl set image deployment/${{ inputs.deployment }} ${{ inputs.container}}=${{ inputs.registry }}/${{ inputs.image }}:${{ inputs.tag }}"
+
+    - name: Verify Deployment
+      shell: bash
+      run: "kubectl rollout status deployment/${{ inputs.deployment }}"

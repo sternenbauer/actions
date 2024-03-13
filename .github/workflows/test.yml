@@ -24,9 +24,24 @@ jobs:
           ghp-token: "foo"
 
       - name: Run Node
-        run: node main.js
+        run: "node main.js"
         working-directory: example
 
       - name: Run Go
-        run: go run main.go
+        run: "go run main.go"
         working-directory: example
+
+      - name: Upload Image (GCP)
+        uses: ./upload-image
+        with:
+          credentials: "${{ secrets.GCP_AR_KEY }}"
+          image: "sternenbauer/galaxy/actions-example"
+          directory: "example"
+
+      - name: Update Deployment
+        uses: ./update-deployment
+        with:
+          k8s-config: "${{ secrets.K8S_CONFIG }}"
+          deployment: "actions-example"
+          container: "actions-example"
+          image: "sternenbauer/galaxy/actions-example"
