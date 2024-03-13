@@ -32,7 +32,7 @@ jobs:
         working-directory: example
 
       - name: Upload Image (GCP)
-        uses: ./upload-image
+        uses: ./upload-image-gcp
         with:
           credentials: "${{ secrets.GCP_AR_KEY }}"
           image: "sternenbauer/galaxy/actions-example"
