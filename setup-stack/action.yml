@@ -5,10 +5,18 @@ inputs:
     description: "The directory to run the setup in."
     required: true
     default: "."
+  node-enabled:
+    description: "Whether to setup Node.js."
+    required: false
+    default: "true"
   node-version:
     description: "The Node.js version to use."
     required: true
     default: "18.x"
+  go-enabled:
+    description: "Whether to setup Go."
+    required: false
+    default: "true"
   go-version:
     description: "The Go version to use."
     required: true
@@ -22,6 +30,7 @@ runs:
     - name: Fix Node
       shell: bash
       run: "pip install setuptools"
+      if: "${{ inputs.node-enabled == 'true' }}"
 
     - name: Prepare NPM
       shell: bash
@@ -43,19 +52,23 @@ runs:
         node-version: "${{ inputs.node-version }}"
         cache: "yarn"
         cache-dependency-path: "${{ inputs.directory }}/yarn.lock"
+      if: "${{ inputs.node-enabled == 'true' }}"
 
     - name: Yarn Install
       shell: bash
       run: "yarn install --network-timeout 300000"
       working-directory: "${{ inputs.directory }}"
+      if: "${{ inputs.node-enabled == 'true' }}"
 
     - name: Setup Go
       uses: actions/setup-go@v4
       with:
         go-version: "${{ inputs.go-version }}"
         cache-dependency-path: "${{ inputs.directory }}/go.sum"
+      if: "${{ inputs.go-enabled == 'true' }}"
 
     - name: Go Install
       shell: bash
       run: go mod download
       working-directory: "${{ inputs.directory }}"
+      if: "${{ inputs.go-enabled == 'true' }}"
