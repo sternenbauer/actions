@@ -24,8 +24,11 @@ runs:
   using: "composite"
   steps:
     - name: Azure Login
-      shell: bash
-      run: echo "${{ inputs.password }}" | docker login ${{ inputs.registry }} -u ${{ inputs.username }} --password-stdin
+      uses: azure/docker-login@v2
+      with:
+        login-server: "${{ inputs.registry }}"
+        username: "${{ inputs.username }}"
+        password: "${{ inputs.password }}"
       if: "! ${{ inputs.skipAuth }}"
 
     - name: Build Image
