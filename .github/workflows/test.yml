@@ -41,8 +41,8 @@ jobs:
       - name: Upload Image (Azure)
         uses: ./upload-image-az
         with:
-          username: "sternenbauer"
-          password: "${{ secrets.AZ_AR_PW }}"
+          username: "${{ secrets.AZR_USERNAME }}"
+          password: "${{ secrets.AZR_PASSWORD }}"
           registry: "sternenbauer.azurecr.io"
           image: "actions-example"
           directory: "example"
