@@ -61,4 +61,5 @@ jobs:
           k8s-config: "${{ secrets.AZ_K8S_CONFIG }}"
           deployment: "actions-example"
           container: "actions-example"
-          image: "sternenbauer/galaxy/actions-example"
+          registry: "sternenbauer.azurecr.io"
+          image: "actions-example"
