@@ -38,10 +38,27 @@ jobs:
           image: "sternenbauer/galaxy/actions-example"
           directory: "example"
 
-      - name: Update Deployment
+      - name: Upload Image (Azure)
+        uses: ./upload-image-az
+        with:
+          username: "sternenbauer"
+          password: "${{ secrets.AZ_AR_PW }}"
+          registry: "sternenbauer.azurecr.io"
+          image: "actions-example"
+          directory: "example"
+
+      - name: Update Deployment (GCP)
         uses: ./update-deployment
         with:
           k8s-config: "${{ secrets.K8S_CONFIG }}"
+          deployment: "actions-example"
+          container: "actions-example"
+          image: "sternenbauer/galaxy/actions-example"
+
+      - name: Update Deployment (Azure)
+        uses: ./update-deployment
+        with:
+          k8s-config: "${{ secrets.AZ_K8S_CONFIG }}"
           deployment: "actions-example"
           container: "actions-example"
           image: "sternenbauer/galaxy/actions-example"

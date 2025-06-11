@@ -1,0 +1,40 @@
+name: Upload Image (Azure)
+description: "Uploads a Docker image to Azure Container Registry (ACR)."
+inputs:
+  username:
+    description: "ACR Username (usually the registry name)"
+    required: true
+  password:
+    description: "ACR Password (e.g. access key or token)"
+    required: true
+  registry:
+    description: "ACR login server (e.g. myregistry.azurecr.io)"
+    required: true
+  image:
+    description: "Build and push the image, if provided"
+    required: false
+  directory:
+    description: "Directory to build the image in."
+    required: false
+    default: "."
+  skipAuth:
+    description: "Skip authentication, if provided"
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - name: Azure Login
+      shell: bash
+      run: echo "${{ inputs.password }}" | docker login ${{ inputs.registry }} -u ${{ inputs.username }} --password-stdin
+      if: "! ${{ inputs.skipAuth }}"
+
+    - name: Build Image
+      shell: bash
+      run: "docker build --platform linux/amd64 -t ${{ inputs.registry }}/${{ inputs.image }}:${GITHUB_SHA::7} ."
+      if: "${{ inputs.image }}"
+      working-directory: "${{ inputs.directory }}"
+
+    - name: Push Image
+      shell: bash
+      run: "docker push ${{ inputs.registry }}/${{ inputs.image }}:${GITHUB_SHA::7}"
+      if: "${{ inputs.image }}"
