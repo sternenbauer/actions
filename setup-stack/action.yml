@@ -58,19 +58,19 @@ runs:
         cache-dependency-path: "${{ inputs.directory }}/yarn.lock"
       if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/yarn.lock', inputs.directory)) != '' }}"
 
+    - name: Enable pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: "${{ inputs.pnpm-version }}"
+        run_install: false
+      if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/pnpm-lock.yaml', inputs.directory)) != '' }}"
+
     - name: Setup Node (pnpm)
       uses: actions/setup-node@v4
       with:
         node-version: "${{ inputs.node-version }}"
         cache: "pnpm"
         cache-dependency-path: "${{ inputs.directory }}/pnpm-lock.yaml"
-      if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/pnpm-lock.yaml', inputs.directory)) != '' }}"
-
-    - name: Enable pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: "${{ inputs.pnpm-version }}"
-        run_install: false
       if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/pnpm-lock.yaml', inputs.directory)) != '' }}"
 
     - name: Yarn Install
