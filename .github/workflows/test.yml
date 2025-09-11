@@ -23,9 +23,18 @@ jobs:
           directory: "example"
           ghp-token: "foo"
 
+      - name: Setup Stack (pnmp)
+        uses: ./setup-stack
+        with:
+          directory: "example-pnpm"
+
       - name: Run Node
         run: "node main.js"
         working-directory: example
+
+      - name: Run Node (pnpm)
+        run: "node main.js"
+        working-directory: example-pnpm
 
       - name: Run Go
         run: "go run main.go"

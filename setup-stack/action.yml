@@ -1,5 +1,5 @@
 name: Setup Stack
-description: "Prepares the Go and Node.js/Yarn Stack."
+description: "Prepares the Go and Node.js/Yarn/pnpm Stack."
 inputs:
   directory:
     description: "The directory to run the setup in."
@@ -13,6 +13,10 @@ inputs:
     description: "The Node.js version to use."
     required: true
     default: "18.x"
+  pnpm-version:
+    description: "pnpm version to use when pnpm-lock.yaml is present."
+    required: false
+    default: "9"
   go-enabled:
     description: "Whether to setup Go."
     required: false
@@ -46,19 +50,40 @@ runs:
         GHP_TOKEN: "${{ inputs.ghp-token }}"
       if: "${{ inputs.ghp-token }}"
 
-    - name: Setup Node
+    - name: Setup Node (Yarn)
       uses: actions/setup-node@v4
       with:
         node-version: "${{ inputs.node-version }}"
         cache: "yarn"
         cache-dependency-path: "${{ inputs.directory }}/yarn.lock"
-      if: "${{ inputs.node-enabled == 'true' }}"
+      if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/yarn.lock', inputs.directory)) != '' }}"
+
+    - name: Setup Node (pnpm)
+      uses: actions/setup-node@v4
+      with:
+        node-version: "${{ inputs.node-version }}"
+        cache: "pnpm"
+        cache-dependency-path: "${{ inputs.directory }}/pnpm-lock.yaml"
+      if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/pnpm-lock.yaml', inputs.directory)) != '' }}"
+
+    - name: Enable pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: "${{ inputs.pnpm-version }}"
+        run_install: false
+      if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/pnpm-lock.yaml', inputs.directory)) != '' }}"
 
     - name: Yarn Install
       shell: bash
       run: "yarn install --network-timeout 300000"
       working-directory: "${{ inputs.directory }}"
-      if: "${{ inputs.node-enabled == 'true' }}"
+      if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/yarn.lock', inputs.directory)) != '' }}"
+
+    - name: pnpm Install
+      shell: bash
+      run: "pnpm install --frozen-lockfile"
+      working-directory: "${{ inputs.directory }}"
+      if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/pnpm-lock.yaml', inputs.directory)) != '' }}"
 
     - name: Setup Go
       uses: actions/setup-go@v4
