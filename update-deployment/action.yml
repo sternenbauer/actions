@@ -9,21 +9,21 @@ inputs:
     required: false
     default: deployment
   deployment:
-    description: "Resource Name"
-    required: true
+    description: "Update the resource, if provided"
+    required: false
   container:
     description: "Container Name"
-    required: true
+    required: false
   registry:
     description: "Container Registry"
-    required: true
+    required: false
     default: europe-west1-docker.pkg.dev
   image:
     description: "Image Name"
-    required: true
+    required: false
   tag:
     description: "Image Tag"
-    required: true
+    required: false
     default: "${GITHUB_SHA::7}"
   skipSetup:
     description: "Skip Setup, if provided"
@@ -47,7 +47,9 @@ runs:
     - name: Update Image
       shell: bash
       run: "kubectl set image ${{ inputs.type }}/${{ inputs.deployment }} ${{ inputs.container}}=${{ inputs.registry }}/${{ inputs.image }}:${{ inputs.tag }}"
+      if: "${{ inputs.deployment }}"
 
     - name: Verify Rollout
       shell: bash
       run: "kubectl rollout status ${{ inputs.type }}/${{ inputs.deployment }}"
+      if: "${{ inputs.deployment }}"
