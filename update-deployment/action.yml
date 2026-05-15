@@ -1,11 +1,15 @@
 name: Update Deployment
-description: "Updates a Kubernetes Deployment with a new Image tag."
+description: "Updates a Kubernetes Deployment, DaemonSet, or StatefulSet with a new Image tag."
 inputs:
   k8s-config:
     description: "Kubernetes Configuration"
     required: true
+  type:
+    description: "Resource Type (deployment, daemonset, statefulset)"
+    required: false
+    default: deployment
   deployment:
-    description: "Deployment Name"
+    description: "Resource Name"
     required: true
   container:
     description: "Container Name"
@@ -42,8 +46,8 @@ runs:
 
     - name: Update Image
       shell: bash
-      run: "kubectl set image deployment/${{ inputs.deployment }} ${{ inputs.container}}=${{ inputs.registry }}/${{ inputs.image }}:${{ inputs.tag }}"
+      run: "kubectl set image ${{ inputs.type }}/${{ inputs.deployment }} ${{ inputs.container}}=${{ inputs.registry }}/${{ inputs.image }}:${{ inputs.tag }}"
 
-    - name: Verify Deployment
+    - name: Verify Rollout
       shell: bash
-      run: "kubectl rollout status deployment/${{ inputs.deployment }}"
+      run: "kubectl rollout status ${{ inputs.type }}/${{ inputs.deployment }}"
