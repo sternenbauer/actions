@@ -1,0 +1,48 @@
+name: Update Config Map
+description: "Updates a Kubernetes ConfigMap with a new key-value pair."
+inputs:
+  k8s-config:
+    description: "Kubernetes Configuration"
+    required: true
+  namespace:
+    description: "Namespace of the ConfigMap"
+    required: false
+  configmap:
+    description: "Update the resource, if provided"
+    required: false
+  key:
+    description: "Key to update"
+    required: false
+  value:
+    description: "Value to set"
+    required: false
+  skipSetup:
+    description: "Skip Setup, if provided"
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+      if: "${{ !inputs.skipSetup }}"
+
+    - name: Prepare Context
+      uses: azure/k8s-set-context@v1
+      with:
+        kubeconfig: ${{ inputs.k8s-config }}
+      if: "${{ !inputs.skipSetup }}"
+
+    - name: Update ConfigMap
+      shell: bash
+      env:
+        KEY: "${{ inputs.key }}"
+        VALUE: "${{ inputs.value }}"
+        NAMESPACE: "${{ inputs.namespace }}"
+      run: |
+        PATCH=$(jq -n --arg k "$KEY" --arg v "$VALUE" '{data: {($k): $v}}')
+        NS_ARG=""
+        if [ -n "$NAMESPACE" ]; then
+          NS_ARG="-n $NAMESPACE"
+        fi
+        kubectl patch configmap ${{ inputs.configmap }} $NS_ARG --type merge --patch "$PATCH"
+      if: "${{ inputs.configmap }}"

@@ -41,7 +41,6 @@ runs:
         kubeconfig: ${{ inputs.k8s-config }}
       if: "${{ !inputs.skipSetup }}"
 
-    # TODO: Make tag configurable.
     # TODO: Make namespace configurable.
 
     - name: Update Image
