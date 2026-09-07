@@ -1,0 +1,111 @@
+name: Setup macOS Signing
+description: "Prepares a macOS runner to sign and notarize apps with an Apple identity."
+inputs:
+  certificate:
+    description: "The base64 encoded .p12 export of the Developer ID certificate and key."
+    required: true
+  certificate-password:
+    description: "The password of the .p12 export."
+    required: true
+  signing-identity:
+    description: "The signing identity, e.g. 'Developer ID Application: Foo Inc. (TEAMID)'."
+    required: true
+  team-id:
+    description: "The Apple Developer team ID."
+    required: true
+  apple-id:
+    description: "The Apple ID used for notarization."
+    required: false
+  apple-id-password:
+    description: "The app-specific password of the Apple ID used for notarization."
+    required: false
+  notarize:
+    description: "Whether to request notarization from the build (sets NOTARIZE=1)."
+    required: false
+    default: "false"
+  keychain:
+    description: "The name of the temporary keychain to import the certificate into."
+    required: false
+    default: "signing"
+runs:
+  using: "composite"
+  steps:
+    - name: Check Runner
+      shell: bash
+      run: |
+        if [ "$RUNNER_OS" != "macOS" ]; then
+          echo "::error::setup-macos-signing requires a macOS runner (got $RUNNER_OS)"
+          exit 1
+        fi
+
+    - name: Import Certificate
+      shell: bash
+      env:
+        CERTIFICATE: "${{ inputs.certificate }}"
+        CERTIFICATE_PASSWORD: "${{ inputs.certificate-password }}"
+        SIGNING_IDENTITY: "${{ inputs.signing-identity }}"
+        KEYCHAIN_NAME: "${{ inputs.keychain }}"
+      run: |
+        set -eu
+
+        # prepare paths and a throwaway keychain password
+        KEYCHAIN_PATH="$RUNNER_TEMP/$KEYCHAIN_NAME.keychain-db"
+        KEYCHAIN_PASSWORD="$(openssl rand -hex 16)"
+        CERTIFICATE_PATH="$RUNNER_TEMP/$KEYCHAIN_NAME.p12"
+
+        # recreate the certificate from the secret
+        echo "$CERTIFICATE" | base64 --decode > "$CERTIFICATE_PATH"
+
+        # create and unlock a temporary keychain
+        security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+        security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+        # import the certificate and permit codesign to use it
+        security import "$CERTIFICATE_PATH" -k "$KEYCHAIN_PATH" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+        security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" > /dev/null
+
+        # add the keychain to the search list so identities are found
+        security list-keychain -d user -s "$KEYCHAIN_PATH" login.keychain
+
+        # remove the certificate file
+        rm -f "$CERTIFICATE_PATH"
+
+        # verify the signing identity is available
+        if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -qF "$SIGNING_IDENTITY"; then
+          echo "::error::signing identity '$SIGNING_IDENTITY' not found in imported certificate"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+          exit 1
+        fi
+
+        # export the keychain path
+        echo "APPLE_KEYCHAIN=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+
+    - name: Export Environment
+      shell: bash
+      env:
+        SIGNING_IDENTITY: "${{ inputs.signing-identity }}"
+        TEAM_ID: "${{ inputs.team-id }}"
+        APPLE_ID: "${{ inputs.apple-id }}"
+        APPLE_ID_PASSWORD: "${{ inputs.apple-id-password }}"
+        NOTARIZE: "${{ inputs.notarize }}"
+      run: |
+        set -eu
+
+        # export identity and credentials
+        echo "APPLE_SIGNING_IDENTITY=$SIGNING_IDENTITY" >> "$GITHUB_ENV"
+        echo "APPLE_TEAM_ID=$TEAM_ID" >> "$GITHUB_ENV"
+        if [ -n "$APPLE_ID" ]; then
+          echo "APPLE_ID_EMAIL=$APPLE_ID" >> "$GITHUB_ENV"
+          echo "::add-mask::$APPLE_ID_PASSWORD"
+          echo "APPLE_ID_PASSWORD=$APPLE_ID_PASSWORD" >> "$GITHUB_ENV"
+        fi
+
+        # request notarization
+        if [ "$NOTARIZE" = "true" ]; then
+          if [ -z "$APPLE_ID" ] || [ -z "$APPLE_ID_PASSWORD" ]; then
+            echo "::error::notarization requires apple-id and apple-id-password"
+            exit 1
+          fi
+          echo "NOTARIZE=1" >> "$GITHUB_ENV"
+        fi
