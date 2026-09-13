@@ -1,0 +1,70 @@
+name: Setup MinIO
+description: "Builds and runs a MinIO server for tests. Requires Go to be set up."
+inputs:
+  version:
+    description: "The MinIO version to build, as a Go module version or tag."
+    required: true
+    default: "v0.0.0-20260212201848-7aac2a2c5b7c"
+  port:
+    description: "The port the server listens on."
+    required: true
+    default: "9000"
+  root-user:
+    description: "The root user the server is created with."
+    required: true
+    default: "minioadmin"
+  root-password:
+    description: "The root password the server is created with."
+    required: true
+    default: "minioadmin"
+  directory:
+    description: "The directory the server stores its data in."
+    required: true
+    default: "/tmp/minio"
+  log-file:
+    description: "The file the server writes its output to."
+    required: true
+    default: "/tmp/minio.log"
+runs:
+  using: "composite"
+  steps:
+    # the community edition is distributed as source only since late 2025 and
+    # the repository was archived in early 2026: minio/minio is gone from Docker
+    # Hub, as bitnami/minio was before it, and no image is published anywhere
+    # official. The module proxy keeps the source immutably, so the server is
+    # built from it here and the binary is cached on the version, which leaves
+    # only a version bump paying the two minutes the build takes
+    - name: Cache MinIO
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: "~/.local/bin/minio"
+        key: "minio-${{ runner.os }}-${{ inputs.version }}"
+
+    - name: Build MinIO
+      shell: bash
+      env:
+        VERSION: "${{ inputs.version }}"
+      run: |
+        mkdir -p ~/.local/bin
+        GOBIN=~/.local/bin go install "github.com/minio/minio@$VERSION"
+      if: "${{ steps.cache.outputs.cache-hit != 'true' }}"
+
+    # no bucket is created here: a test run is expected to make its own and
+    # remove it again, so that concurrent runs never share one
+    - name: Run MinIO
+      shell: bash
+      env:
+        PORT: "${{ inputs.port }}"
+        DIRECTORY: "${{ inputs.directory }}"
+        LOG_FILE: "${{ inputs.log-file }}"
+        MINIO_ROOT_USER: "${{ inputs.root-user }}"
+        MINIO_ROOT_PASSWORD: "${{ inputs.root-password }}"
+      run: |
+        mkdir -p "$DIRECTORY"
+        ~/.local/bin/minio server --address ":$PORT" "$DIRECTORY" > "$LOG_FILE" 2>&1 &
+        for i in $(seq 1 60); do
+          curl -sf "http://localhost:$PORT/minio/health/live" >/dev/null && break
+          sleep 1
+        done
+        curl -sf "http://localhost:$PORT/minio/health/live" >/dev/null
