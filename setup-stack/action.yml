@@ -51,7 +51,7 @@ runs:
       if: "${{ inputs.ghp-token }}"
 
     - name: Setup Node (Yarn)
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: "${{ inputs.node-version }}"
         cache: "yarn"
@@ -59,14 +59,14 @@ runs:
       if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/yarn.lock', inputs.directory)) != '' }}"
 
     - name: Enable pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v6
       with:
         version: "${{ inputs.pnpm-version }}"
         run_install: false
       if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/pnpm-lock.yaml', inputs.directory)) != '' }}"
 
     - name: Setup Node (pnpm)
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v7
       with:
         node-version: "${{ inputs.node-version }}"
         cache: "pnpm"
@@ -86,7 +86,7 @@ runs:
       if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/pnpm-lock.yaml', inputs.directory)) != '' }}"
 
     - name: Setup Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v7
       with:
         go-version: "${{ inputs.go-version }}"
         cache-dependency-path: "${{ inputs.directory }}/go.sum"

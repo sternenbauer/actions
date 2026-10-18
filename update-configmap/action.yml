@@ -23,11 +23,11 @@ runs:
   using: "composite"
   steps:
     - name: Install kubectl
-      uses: azure/setup-kubectl@v3
+      uses: azure/setup-kubectl@v5
       if: "${{ !inputs.skipSetup }}"
 
     - name: Prepare Context
-      uses: azure/k8s-set-context@v1
+      uses: azure/k8s-set-context@v5
       with:
         kubeconfig: ${{ inputs.k8s-config }}
       if: "${{ !inputs.skipSetup }}"

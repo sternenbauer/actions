@@ -36,7 +36,7 @@ runs:
     # only a version bump paying the two minutes the build takes
     - name: Cache MinIO
       id: cache
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: "~/.local/bin/minio"
         key: "minio-${{ runner.os }}-${{ inputs.version }}"
