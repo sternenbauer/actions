@@ -59,7 +59,7 @@ runs:
       if: "${{ inputs.node-enabled == 'true' && hashFiles(format('{0}/yarn.lock', inputs.directory)) != '' }}"
 
     - name: Enable pnpm
-      uses: pnpm/action-setup@v6
+      uses: pnpm/action-setup@v5
       with:
         version: "${{ inputs.pnpm-version }}"
         run_install: false
