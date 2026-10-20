@@ -11,7 +11,7 @@ inputs:
     description: "The new images by container name, one `container=image` per line. Containers that are not named keep their image."
     required: true
   version:
-    description: "The release version (x.y.z), or a tag carrying it like `v1.2.3` or `server/v1.2.3`, e.g. `${{ github.ref_name }}`. If omitted, the patch of the edition's highest version is bumped, and nothing is published if its latest release already runs the images."
+    description: "The release version (x.y.z), or a tag carrying it like `v1.2.3` or `server/v1.2.3`, e.g. `github.ref_name`. If omitted, the patch of the edition's highest version is bumped, and nothing is published if its latest release already runs the images."
     required: false
   api-url:
     description: "The Hemisphere API."
