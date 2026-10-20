@@ -1,0 +1,45 @@
+name: Publish Release (Hemisphere)
+description: "Publishes a release of an app on Hemisphere, derived from the latest release of an edition with new images."
+inputs:
+  key:
+    description: "The app's Hemisphere API key, created in the console."
+    required: true
+  edition:
+    description: "The slug of the edition the release is published to."
+    required: true
+  images:
+    description: "The new images by container name, one `container=image` per line. Containers that are not named keep their image."
+    required: true
+  version:
+    description: "The release version (x.y.z), or a tag carrying it like `v1.2.3` or `server/v1.2.3`, e.g. `${{ github.ref_name }}`. If omitted, the patch of the edition's highest version is bumped, and nothing is published if its latest release already runs the images."
+    required: false
+  api-url:
+    description: "The Hemisphere API."
+    required: true
+    default: "https://api.hemisphere.cloud"
+outputs:
+  id:
+    description: "The ID of the published release."
+    value: "${{ steps.publish.outputs.id }}"
+  version:
+    description: "The version of the published release."
+    value: "${{ steps.publish.outputs.version }}"
+  created:
+    description: "Whether the release has been created, false if it had already been published."
+    value: "${{ steps.publish.outputs.created }}"
+runs:
+  using: "composite"
+  steps:
+    # the instances of the edition follow the published release at their next
+    # check, a rollout spread over the check interval, and withdrawing the
+    # release in the console moves them back
+    - name: Publish Release
+      id: publish
+      shell: bash
+      env:
+        KEY: "${{ inputs.key }}"
+        EDITION: "${{ inputs.edition }}"
+        IMAGES: "${{ inputs.images }}"
+        VERSION: "${{ inputs.version }}"
+        API_URL: "${{ inputs.api-url }}"
+      run: "${{ github.action_path }}/publish.sh"
